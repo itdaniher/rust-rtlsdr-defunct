@@ -1,0 +1,1 @@
+just basic naive bindings for the super-cool rtl-sdr library

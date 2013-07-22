@@ -1,0 +1,23 @@
+#[link(name = "usb", vers = "0.1", author = "Ian Daniher")];
+
+extern mod extra;
+
+use extra::uv_global_loop;
+use extra::timer;
+
+mod rtlsdr;
+
+fn main() {
+    println(fmt!("deviceCount: %?", rtlsdr::getDeviceCount()));
+	let devHandle = rtlsdr::openDevice(0);
+    println(fmt!("deviceStructAddr: %?", devHandle));
+    println(fmt!("deviceString: %?", rtlsdr::getDeviceName(0)));
+	println(fmt!("buffer cleared: %?", rtlsdr::clearBuffer(devHandle)));
+	println(fmt!("frequency set. %?", rtlsdr::setFrequency(devHandle, 100000000)));
+	println(fmt!("tuner gain set: %?", rtlsdr::setGainAuto(devHandle)));
+	println(fmt!("readSync: %?", rtlsdr::readSync(devHandle, 512)));
+	println(fmt!("readAsync: %?", rtlsdr::readAsync(devHandle)));
+	timer::sleep(&uv_global_loop::get(), 100);
+	rtlsdr::stopAsync(devHandle);
+	rtlsdr::close(devHandle);
+}
