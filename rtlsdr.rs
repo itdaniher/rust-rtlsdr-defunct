@@ -4,6 +4,7 @@ use std::vec;
 use std::cast::transmute;
 use std::ptr::{null};
 use std::task::{SingleThreaded, spawn_sched};
+use std::comm::{stream, Port, Chan, SharedChan};
 
 // NB. pointers are 64b-int-like
 extern {
@@ -14,7 +15,7 @@ extern {
 	fn rtlsdr_set_center_freq(dev: *c_void, freq: u32) -> c_int;
 	fn rtlsdr_set_tuner_gain(dev: *c_void, gain: u32) -> c_int;
 	fn rtlsdr_read_sync(dev: *c_void, buf: *mut u8, len: u32, n_read: *c_int) -> c_int;
-	fn rtlsdr_read_async(dev: *c_void, cb: u64, ctx: *c_void, buf_num: u32, buf_len: u32) -> c_int;
+	fn rtlsdr_read_async(dev: *c_void, cb: u64, chan: *c_void, buf_num: u32, buf_len: u32) -> c_int;
 	fn rtlsdr_cancel_async(dev: *c_void) -> c_int;
 	fn rtlsdr_close(dev: *c_void) -> c_int;
 }
@@ -26,19 +27,22 @@ pub fn close(dev: *c_void){
 	}
 }
 
-extern fn rtlsdr_callback(buf: *u8, len: u32, ctx: *c_void) {
+extern fn rtlsdr_callback(buf: *u8, len: u32, chan: &Chan<~[u8]>) {
 	assert_eq!(len, 512);
 	unsafe {
 		let data = vec::raw::from_buf_raw(buf, len as uint);
+		chan.send(data);
 	}
 }
 
-pub fn readAsync(dev: *c_void) -> () {
+pub fn readAsync(dev: *c_void) -> ~Port<~[u8]> {
+	let (port, chan): (Port<~[u8]>, Chan<~[u8]>) = stream();
 	do spawn_sched(SingleThreaded) { 
 		unsafe{
-			rtlsdr_read_async(dev, transmute(rtlsdr_callback), null(), 32, 512);
+			rtlsdr_read_async(dev, transmute(rtlsdr_callback), transmute(&chan), 32, 512);
 		}
 	}
+	return ~port;
 }
 
 pub fn stopAsync(dev: *c_void) -> () {
