@@ -2,8 +2,6 @@
 
 extern mod extra;
 
-use extra::uv_global_loop;
-use extra::timer;
 use extra::time;
 
 mod rtlsdr;

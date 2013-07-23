@@ -4,7 +4,6 @@ use std::str;
 use std::libc::{c_int, c_uint, c_void};
 use std::vec;
 use std::cast::transmute;
-use std::ptr::{null};
 use std::task::{SingleThreaded, spawn_sched};
 use std::comm::{stream, Port, Chan};
 
@@ -121,8 +120,9 @@ pub fn setGainAuto(device: *c_void) {
 }
 
 
+
+fn i2f(i: u8) -> f32 {(i as f32)/127.0 - 1.0}
 pub fn dataToSamples(data: ~[u8]) -> ~[complex::Complex32] {
-	fn i2f(i: u8) -> f32 {(i as f32)/127.0 - 1.0};
-    let samples = data.chunk_iter(2).transform(|i| complex::Cmplx{re:i2f(i[0]), im:i2f(i[1])}).collect();
+	let samples = data.chunk_iter(2).transform(|i| complex::Cmplx{re:i2f(i[0]), im:i2f(i[1])}).collect();
 	return samples;
 }
