@@ -21,12 +21,20 @@ extern {
 	fn rtlsdr_read_sync(dev: *c_void, buf: *mut u8, len: u32, n_read: *c_int) -> c_int;
 	fn rtlsdr_read_async(dev: *c_void, cb: u64, chan: *c_void, buf_num: u32, buf_len: u32) -> c_int;
 	fn rtlsdr_cancel_async(dev: *c_void) -> c_int;
+	fn rtlsdr_set_sample_rate(dev: *c_void, sps: u32) -> c_int;
 	fn rtlsdr_close(dev: *c_void) -> c_int;
 }
 
 pub fn close(dev: *c_void){
 	unsafe {
 		let success = rtlsdr_close(dev);
+		assert_eq!(success, 0);
+	}
+}
+
+pub fn setSampleRate(dev: *c_void, sps: u32) {
+	unsafe {
+		let success = rtlsdr_set_sample_rate(dev, sps);
 		assert_eq!(success, 0);
 	}
 }
