@@ -122,10 +122,7 @@ pub fn setGainAuto(device: *c_void) {
 
 
 pub fn dataToSamples(data: ~[u8]) -> ~[complex::Complex32] {
-	let mut samples : ~[complex::Cmplx<f32>] = ~[];
-	for data.chunk_iter(2).advance |i| {
-		let s = complex::Cmplx { re: (i[0] as f32)/127.0 - 1.0, im: (i[1] as f32)/127.0 - 1.0 };
-		samples.push(s);
-	}
+	fn i2f(i: u8) -> f32 {(i as f32)/127.0 - 1.0};
+    let samples = data.chunk_iter(2).transform(|i| complex::Cmplx{re:i2f(i[0]), im:i2f(i[1])}).collect();
 	return samples;
 }
