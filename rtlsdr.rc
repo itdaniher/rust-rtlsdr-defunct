@@ -16,8 +16,9 @@ fn main() {
 	println(fmt!("frequency set. %?", rtlsdr::setFrequency(devHandle, 100000000)));
 	println(fmt!("tuner gain set: %?", rtlsdr::setGainAuto(devHandle)));
 	println(fmt!("readSync: %?", rtlsdr::readSync(devHandle, 512)));
-	println(fmt!("readAsync: %?", rtlsdr::readAsync(devHandle)));
+	let p = rtlsdr::readAsync(devHandle);	
 	timer::sleep(&uv_global_loop::get(), 100);
+	println(fmt!("readAsync: %?", rtlsdr::dataToSamples(p.recv())));
 	rtlsdr::stopAsync(devHandle);
 	rtlsdr::close(devHandle);
 }

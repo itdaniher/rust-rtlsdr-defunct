@@ -1,10 +1,14 @@
+extern mod extra;
+
 use std::str;
 use std::libc::{c_int, c_uint, c_void};
 use std::vec;
 use std::cast::transmute;
 use std::ptr::{null};
 use std::task::{SingleThreaded, spawn_sched};
-use std::comm::{stream, Port, Chan, SharedChan};
+use std::comm::{stream, Port, Chan};
+
+use extra::complex;
 
 // NB. pointers are 64b-int-like
 extern {
@@ -106,4 +110,14 @@ pub fn setGainAuto(device: *c_void) {
 		let success = rtlsdr_set_tuner_gain(device, 0);
 		assert_eq!(success, 0);
 	}
+}
+
+
+pub fn dataToSamples(data: ~[u8]) -> ~[complex::Complex32] {
+	let mut samples : ~[complex::Cmplx<f32>] = ~[];
+	for data.chunk_iter(2).advance |i| {
+		let s = complex::Cmplx { re: (i[0] as f32)/127.0 - 1.0, im: (i[1] as f32)/127.0 - 1.0 };
+		samples.push(s);
+	}
+	return samples;
 }
