@@ -1,5 +1,5 @@
 all:
-	rustc --link-args '-lrtlsdr' rtlsdr.rc 
+	rustc -O --link-args '-lrtlsdr' rtlsdr.rc 
 
 clean:
 	rm rtlsdr
