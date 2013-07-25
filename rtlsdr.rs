@@ -3,13 +3,12 @@ extern mod extra;
 use std::str;
 use std::libc::{c_int, c_uint, c_void};
 use std::vec;
-use std::cast::transmute;
-use std::task::{SingleThreaded, spawn_sched};
-use std::comm::{stream, Port, Chan};
+use std::cast;
+use std::task;
+use std::comm;
 
 use extra::complex;
 
-// NB. pointers are 64b-int-like
 extern {
 	fn rtlsdr_open(dev: **c_void, devIndex: u32) -> u32;
     fn rtlsdr_get_device_count() -> u32;
@@ -38,7 +37,7 @@ pub fn setSampleRate(dev: *c_void, sps: u32) {
 	}
 }
 
-extern fn rtlsdr_callback(buf: *u8, len: u32, chan: &Chan<~[u8]>) {
+extern fn rtlsdr_callback(buf: *u8, len: u32, chan: &comm::Chan<~[u8]>) {
 	assert_eq!(len, 512);
 	unsafe {
 		let data = vec::raw::from_buf_raw(buf, len as uint);
@@ -47,10 +46,10 @@ extern fn rtlsdr_callback(buf: *u8, len: u32, chan: &Chan<~[u8]>) {
 }
 
 pub fn readAsync(dev: *c_void) -> ~Port<~[u8]> {
-	let (port, chan): (Port<~[u8]>, Chan<~[u8]>) = stream();
-	do spawn_sched(SingleThreaded) { 
+	let (port, chan): (comm::Port<~[u8]>, comm::Chan<~[u8]>) = stream();
+	do task::spawn_sched(task::SingleThreaded) { 
 		unsafe{
-			rtlsdr_read_async(dev, transmute(rtlsdr_callback), transmute(&chan), 32, 512);
+			rtlsdr_read_async(dev, cast::transmute(rtlsdr_callback), cast::transmute(&chan), 32, 512);
 		}
 	}
 	return ~port;
@@ -84,7 +83,7 @@ pub fn getDeviceCount() -> u32 {
 
 pub fn openDevice(devIndex: u32) -> *c_void{
 	unsafe {
-		let devStructPtr: *c_void = transmute(0);
+		let devStructPtr: *c_void = cast::transmute(0);
 		let success = rtlsdr_open(&devStructPtr, devIndex);
 		assert_eq!(success, 0);
 		return devStructPtr;
