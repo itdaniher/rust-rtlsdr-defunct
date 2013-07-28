@@ -7,10 +7,10 @@ use extra::time;
 mod rtlsdr;
 
 fn main() {
-    println(fmt!("deviceCount: %?", rtlsdr::getDeviceCount()));
+	println(fmt!("deviceCount: %?", rtlsdr::getDeviceCount()));
 	let devHandle = rtlsdr::openDevice(0);
-    println(fmt!("deviceStructAddr: %?", devHandle));
-    println(fmt!("deviceString: %?", rtlsdr::getDeviceName(0)));
+	println(fmt!("deviceStructAddr: %?", devHandle));
+	println(fmt!("deviceString: %?", rtlsdr::getDeviceName(0)));
 	println(fmt!("set sample rate: 2.048e6 - %?", rtlsdr::setSampleRate(devHandle, 2048000)));
 	println(fmt!("buffer cleared: %?", rtlsdr::clearBuffer(devHandle)));
 	println(fmt!("frequency set. %?", rtlsdr::setFrequency(devHandle, 100000000)));

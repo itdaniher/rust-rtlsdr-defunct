@@ -46,7 +46,7 @@ extern fn rtlsdr_callback(buf: *u8, len: u32, chan: &comm::Chan<~[u8]>) {
 }
 
 pub fn readAsync(dev: *c_void) -> ~Port<~[u8]> {
-	let (port, chan): (comm::Port<~[u8]>, comm::Chan<~[u8]>) = stream();
+	let (port, chan): (comm::Port<~[u8]>, comm::Chan<~[u8]>) = comm::stream();
 	do task::spawn_sched(task::SingleThreaded) { 
 		unsafe{
 			rtlsdr_read_async(dev, cast::transmute(rtlsdr_callback), cast::transmute(&chan), 32, 512);
