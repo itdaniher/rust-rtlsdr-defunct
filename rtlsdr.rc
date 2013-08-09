@@ -43,7 +43,7 @@ fn main() {
 		videoChan.send(dpdt.clone());
 		// 15 * 512 = 7679
 		let paddedData = asRe(~[0.0f32, ..256]) + asRe(dpdt) + asRe(~[0.0f32, ..257]);
-		// multiply DFT'd filter coefficients by DFT'd data - implement overlap-add fast convolution
+		// multiply DFT'd filter coefficients by DFT'd data - implement overlap-scrap fast convolution
 		// - http://www.dspguide.com/ch12/1.htm
 		// - https://en.wikipedia.org/wiki/Overlap%E2%80%93add_method
 		// - http://www.cs.princeton.edu/courses/archive/spr05/cos423/lectures/05fft.pdf
