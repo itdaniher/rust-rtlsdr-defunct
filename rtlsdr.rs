@@ -37,43 +37,6 @@ pub fn setSampleRate(dev: *c_void, sps: u32) {
 	}
 }
 
-extern fn rtlsdr_callback(buf: *u8, len: u32, chan: &comm::Chan<~[u8]>) {
-	assert_eq!(len, 512);
-	unsafe {
-		let data = vec::raw::from_buf_raw(buf, len as uint);
-		chan.send(data);
-	}
-}
-
-pub fn readAsync(dev: *c_void) -> ~Port<~[u8]> {
-	let (port, chan): (comm::Port<~[u8]>, comm::Chan<~[u8]>) = comm::stream();
-	do task::spawn_sched(task::SingleThreaded) {
-		unsafe{
-			rtlsdr_read_async(dev, cast::transmute(rtlsdr_callback), cast::transmute(&chan), 32, 512);
-		}
-	}
-	return ~port;
-}
-
-pub fn stopAsync(dev: *c_void) -> () {
-	unsafe {
-		let success = rtlsdr_cancel_async(dev);
-		println(fmt!("%?", success));
-		assert_eq!(success, 0);
-	}
-}
-
-pub fn readSync(dev: *c_void, ct: c_uint) -> ~[u8] {
-	unsafe {
-		let n_read: c_int = 0;
-		let mut buffer: ~[u8] = ~[0, ..512];
-		let success = rtlsdr_read_sync(dev, vec::raw::to_mut_ptr(buffer), ct, &n_read);
-		assert_eq!(success, 0);
-		assert_eq!(ct as i32, n_read);
-		return buffer;
-	}
-}
-
 pub fn getDeviceCount() -> u32 {
 	unsafe {
 		let x: u32 = rtlsdr_get_device_count();
@@ -118,7 +81,42 @@ pub fn setGainAuto(device: *c_void) {
 	}
 }
 
+extern fn rtlsdr_callback(buf: *u8, len: u32, chan: &comm::Chan<~[u8]>) {
+	assert_eq!(len, 512);
+	unsafe {
+		let data = vec::raw::from_buf_raw(buf, len as uint);
+		chan.send(data);
+	}
+}
 
+pub fn readAsync(dev: *c_void) -> ~Port<~[u8]> {
+	let (port, chan): (comm::Port<~[u8]>, comm::Chan<~[u8]>) = comm::stream();
+	do task::spawn_sched(task::SingleThreaded) {
+		unsafe{
+			rtlsdr_read_async(dev, cast::transmute(rtlsdr_callback), cast::transmute(&chan), 32, 512);
+		}
+	}
+	return ~port;
+}
+
+pub fn stopAsync(dev: *c_void) -> () {
+	unsafe {
+		let success = rtlsdr_cancel_async(dev);
+		println(fmt!("%?", success));
+		assert_eq!(success, 0);
+	}
+}
+
+pub fn readSync(dev: *c_void, ct: c_uint) -> ~[u8] {
+	unsafe {
+		let n_read: c_int = 0;
+		let mut buffer: ~[u8] = ~[0, ..512];
+		let success = rtlsdr_read_sync(dev, vec::raw::to_mut_ptr(buffer), ct, &n_read);
+		assert_eq!(success, 0);
+		assert_eq!(ct as i32, n_read);
+		return buffer;
+	}
+}
 
 fn i2f(i: u8) -> f32 {(i as f32)/127.0 - 1.0}
 pub fn dataToSamples(data: ~[u8]) -> ~[complex::Complex32] {
