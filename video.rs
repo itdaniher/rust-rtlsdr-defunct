@@ -39,7 +39,7 @@ fn doWorkWithPEs (pDataC: comm::Port<~[f32]>, cUserC: comm::Chan<sdl::event::Key
 		let mut lastDraw: u64 = 0;
 		sdl::init([sdl::InitVideo]);
 		sdl::wm::set_caption("rust-sdl", "rust-sdl");
-		let screen = match sdl::video::set_video_mode(800, 600, 32, [sdl::video::HWSurface],
+		let screen = match sdl::video::set_video_mode(1100, 400, 32, [sdl::video::HWSurface],
 			                                                        [sdl::video::DoubleBuf]) {
 			Ok(screen) => screen,
 			Err(err) => fail!(fmt!("failed to set video mode: %s", err))
