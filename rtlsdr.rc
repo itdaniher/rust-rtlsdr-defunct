@@ -10,9 +10,6 @@ mod rtlsdr;
 mod pa;
 mod dsputils;
 
-fn asRe ( d: ~[f32] ) -> ~[complex::Complex32] { return d.iter().transform(|&x| {complex::Cmplx {re: x, im: 0.0}}).collect::<~[complex::Complex32]>();}
-fn asF32 ( d: ~[complex::Complex32] ) -> ~[f32] { return d.iter().transform(|&x| {if (num::abs(x.im) < 0.001) { x.re } else { let (m,p) = x.to_polar(); m*num::signum(p) }}).collect::<~[f32]>(); }
-fn asF64 ( d: ~[f32] ) -> ~[f64] { return d.iter().transform(|&x| x as f64).collect(); }
 fn main() {
 	let devHandle = rtlsdr::openDevice(0);
 	rtlsdr::setSampleRate(devHandle, 881000);
@@ -23,9 +20,9 @@ fn main() {
 	let pi: f32 = num::atan2(1f32,1f32) * 4f32;
 	let co = pa::buildPASinkBlock(44100);
 	// len 511 complex-coefficiented, real-valued block filter, padded to 8192
-	let filter: ~[f32] = dsputils::lpf(511, 20e3/881e3);
+	let filter: ~[f32] = dsputils::bpf(511, 20.0/881e3, 20e3/881e3);
 	let paddedFilter: ~[f32] = ~[0.0f32, ..3840] + filter + ~[0.0f32, ..3841];
-	let filterFFTd: ~[complex::Complex32] = kissfft::FFT(asRe(paddedFilter));
+	let filterFFTd: ~[complex::Complex32] = kissfft::FFT(dsputils::asRe(paddedFilter));
 	let pdata = rtlsdr::readAsync(devHandle);
 	loop {
 		let start = time::precise_time_ns();
@@ -45,14 +42,14 @@ fn main() {
 			).collect::<~[f32]>();
 		//videoChan.send(dpdt.clone());
 		// 15 * 512 = 7679
-		let paddedData = asRe(~[0.0f32, ..256]) + asRe(dpdt) + asRe(~[0.0f32, ..257]);
+		let paddedData = dsputils::asRe(~[0.0f32, ..256]) + dsputils::asRe(dpdt) + dsputils::asRe(~[0.0f32, ..257]);
 		// multiply DFT'd filter coefficients by DFT'd data - implement overlap-scrap fast convolution
 		// - http://www.dspguide.com/ch12/1.htm
 		// - https://en.wikipedia.org/wiki/Overlap%E2%80%93add_method
 		// - http://www.cs.princeton.edu/courses/archive/spr05/cos423/lectures/05fft.pdf
 		let datafft = kissfft::FFT(paddedData);
 		let convolved: ~[complex::Complex32] = datafft.iter().zip(filterFFTd.iter()).transform(|(&x, &y)| {x*y}).collect();
-		let filtered: ~[f32] = asF32(kissfft::iFFT(convolved));
+		let filtered: ~[f32] = dsputils::asF32(kissfft::iFFT(convolved));
 		let trimmed: ~[f32] = filtered.iter().enumerate().filter(|&(x, &y)| (256<x)  && (x<=((8192/2)-256))).transform(|(x, &y)| y).collect();
 		// too-clever downsampling to ensure consistent 44.1k sample rate 
 		let samples = (time::precise_time_ns() - start) as f32 * 44.1e-6;

@@ -1,8 +1,8 @@
 extern mod sdl;
 extern mod extra;
-
 use extra::time;
 use std::comm;
+mod dsputils;
 
 pub fn drawVectorAsBarPlot (screen: &sdl::video::Surface, mut data: ~[f32]){
 	// downsample to 800px if needbe
@@ -77,5 +77,6 @@ pub fn spawnVectorVisualSink() -> (comm::Port<sdl::event::Key>, comm::Chan<~[f32
 
 fn main () {
 	let (p, c) = spawnVectorVisualSink();
-	c.send(~[0f32, -1f32, 1f32, -2f32, 2f32, 3f32, 4f32, 5f32]);
+	c.send(dsputils::bpf(511, 20.0/881e3, 20e3/881e3));
+	loop {}
 }
