@@ -1,11 +1,19 @@
 extern mod extra;
 
+// basic tools for type coercion and FIR filter creation, useful for DSP
+// mad props to Bob Maling for his work @ http://musicdsp.org/showArchiveComment.php?ArchiveID=194
+
 use extra::complex;
 use std::num;
 
+// helper functions useful for FFT work
 pub fn asRe ( d: ~[f32] ) -> ~[complex::Complex32] { return d.iter().transform(|&x| {complex::Cmplx {re: x, im: 0.0}}).collect::<~[complex::Complex32]>();}
 pub fn asF32 ( d: ~[complex::Complex32] ) -> ~[f32] { return d.iter().transform(|&x| {if (num::abs(x.im) < 0.001) { x.re } else { let (m,p) = x.to_polar(); m*num::signum(p) }}).collect::<~[f32]>(); }
 pub fn asF64 ( d: ~[f32] ) -> ~[f64] { return d.iter().transform(|&x| x as f64).collect(); }
+
+// filter code accepts:
+//	m, uint, tap length
+//	fc, f32, decimal ratio of corner to sampling freqs
 
 pub fn window(m: uint) -> ~[f32] {
 	let N = m as f32;
@@ -24,9 +32,8 @@ pub fn window(m: uint) -> ~[f32] {
 }
 
 pub fn sinc(m: uint, fc: f32) -> ~[f32] {
-	// fc is decimal amount of sample rate at which to place corner
-	// should always be at nyquist or below
-	assert!(fc <= 0.5);
+	// fc should always specify corner below nyquist
+	assert!(fc < 0.5);
 	let pi: f32 = num::atan2(1f32,1f32) * 4f32;
 	let results: ~[f32] = range(0, m).transform(|x| -> f32 {
 		let n = x as f32 - m as f32/2f32;
