@@ -120,6 +120,6 @@ pub fn readSync(dev: *c_void, ct: c_uint) -> ~[u8] {
 
 fn i2f(i: u8) -> f32 {(i as f32)/127.0 - 1.0}
 pub fn dataToSamples(data: ~[u8]) -> ~[complex::Complex32] {
-	let samples = data.chunk_iter(2).transform(|i| complex::Cmplx{re:i2f(i[0]), im:i2f(i[1])}).collect();
+	let samples = data.chunk_iter(2).map(|i| complex::Cmplx{re:i2f(i[0]), im:i2f(i[1])}).collect();
 	return samples;
 }

@@ -33,8 +33,8 @@ fn main() {
 			if (samples.len() == (512*15)) {break};
 		}
 		// phase of complex numbers
-		let phase: ~[f32] = samples.iter().transform(|&x| num::atan2(x.im, x.re)).collect();
-		let dpdt: ~[f32] = phase.window_iter(2).transform(|x| {
+		let phase: ~[f32] = samples.iter().map(|&x| num::atan2(x.im, x.re)).collect();
+		let dpdt: ~[f32] = phase.window_iter(2).map(|x| {
 			let mut dx = x[0]-x[1];
 			if (dx < -pi) {dx = dx + 2f32*pi};
 			if (dx > pi) {dx = dx - 2f32*pi};
@@ -48,16 +48,16 @@ fn main() {
 		// - https://en.wikipedia.org/wiki/Overlap%E2%80%93add_method
 		// - http://www.cs.princeton.edu/courses/archive/spr05/cos423/lectures/05fft.pdf
 		let datafft = kissfft::FFT(paddedData);
-		let convolved: ~[complex::Complex32] = datafft.iter().zip(filterFFTd.iter()).transform(|(&x, &y)| {x*y}).collect();
+		let convolved: ~[complex::Complex32] = datafft.iter().zip(filterFFTd.iter()).map(|(&x, &y)| {x*y}).collect();
 		let filtered: ~[f32] = dsputils::asF32(kissfft::iFFT(convolved));
-		let trimmed: ~[f32] = filtered.iter().enumerate().filter(|&(x, &y)| (256<x)  && (x<=((8192/2)-256))).transform(|(x, &y)| y).collect();
-		// too-clever downsampling to ensure consistent 44.1k sample rate 
+		let trimmed: ~[f32] = filtered.iter().enumerate().filter(|&(x, &y)| (256<x)  && (x<=((8192/2)-256))).map(|(x, &y)| y).collect();
+		// too-clever downsampling to ensure consistent 44.1k sample rate
 		let samples = (time::precise_time_ns() - start) as f32 * 44.1e-6;
 		let len = trimmed.len() as f32;
 		let downsampleFactor = samples/len;
 		let downsampled: ~[f32] = trimmed.iter().enumerate().filter(|&(x, &y)|
 			((x as f32*downsampleFactor) - (x as f32*downsampleFactor).floor()) < downsampleFactor
-			).transform(|(x, &y)| y).collect();
+			).map(|(x, &y)| y).collect();
 		videoChan.send(downsampled.clone());
 		co.send(downsampled);
 	}
