@@ -16,7 +16,7 @@ fn main() {
 	rtlsdr::clearBuffer(devHandle);
 	rtlsdr::setGainAuto(devHandle);
 	rtlsdr::setFrequency(devHandle, 87900000);
-	let (keystrokePort, videoChan) = video::spawnVectorVisualSink();
+	let videoChan = video::spawnVectorVisualSink();
 	let pi: f32 = num::atan2(1f32,1f32) * 4f32;
 	let co = pa::buildPASinkBlock(44100);
 	// len 511 complex-coefficiented, real-valued block filter, padded to 8192
