@@ -2,6 +2,7 @@ extern mod sdl;
 extern mod extra;
 use extra::time;
 use std::comm;
+use std::task;
 mod dsputils;
 
 pub fn drawVectorAsBarPlot (screen: &sdl::video::Surface, mut data: ~[f32]){
@@ -35,7 +36,7 @@ pub fn drawVectorAsBarPlot (screen: &sdl::video::Surface, mut data: ~[f32]){
 	}).len();
 }
 
-fn doWorkWithPEs (pDataC: comm::Port<~[f32]>, cUserC: comm::Chan<sdl::event::Key>) {
+pub fn doWorkWithPEs (pDataC: comm::Port<~[f32]>) {
 	do sdl::start {
 		let mut lastDraw: u64 = 0;
 		sdl::init([sdl::InitVideo]);
@@ -54,7 +55,7 @@ fn doWorkWithPEs (pDataC: comm::Port<~[f32]>, cUserC: comm::Chan<sdl::event::Key
 				match ev {
 					sdl::event::QuitEvent => break 'main,
 					sdl::event::NoEvent => {break 'event},
-					sdl::event::KeyEvent (a,b,c,d) => {if (b == true) {cUserC.send(a)}},
+					//sdl::event::KeyEvent (a,b,c,d) => {if (b == true) {cUserC.send(a)}},
 					_ => {println(fmt!("%?", ev));}
 				}
 			}
@@ -70,7 +71,9 @@ fn doWorkWithPEs (pDataC: comm::Port<~[f32]>, cUserC: comm::Chan<sdl::event::Key
 pub fn spawnVectorVisualSink() -> (comm::Port<sdl::event::Key>, comm::Chan<~[f32]>){
 	let (pData, cData): (comm::Port<~[f32]>, comm::Chan<~[f32]>) = comm::stream();
 	let (pUser, cUser): (comm::Port<sdl::event::Key>, comm::Chan<sdl::event::Key>) = comm::stream();
-	doWorkWithPEs(pData, cUser);
+	let mut t = task::task();
+	t.sched_mode(task::SingleThreaded);
+	t.spawn_with(pData, doWorkWithPEs);
 	return (pUser, cData);
 }
 

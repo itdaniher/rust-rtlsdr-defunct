@@ -9,19 +9,28 @@ use std::comm;
 
 use extra::complex;
 
-extern {
-	fn rtlsdr_open(dev: **c_void, devIndex: u32) -> u32;
-    fn rtlsdr_get_device_count() -> u32;
-	fn rtlsdr_get_device_name(devIndex: u32) -> *i8;
-	fn rtlsdr_reset_buffer(dev: *c_void) -> c_int;
-	fn rtlsdr_set_center_freq(dev: *c_void, freq: u32) -> c_int;
-	fn rtlsdr_set_tuner_gain(dev: *c_void, gain: u32) -> c_int;
-	fn rtlsdr_read_sync(dev: *c_void, buf: *mut u8, len: u32, n_read: *c_int) -> c_int;
-	fn rtlsdr_read_async(dev: *c_void, cb: u64, chan: *c_void, buf_num: u32, buf_len: u32) -> c_int;
-	fn rtlsdr_cancel_async(dev: *c_void) -> c_int;
-	fn rtlsdr_set_sample_rate(dev: *c_void, sps: u32) -> c_int;
-	fn rtlsdr_close(dev: *c_void) -> c_int;
-}
+externfn!(
+	fn rtlsdr_open(dev: **c_void, devIndex: u32) -> u32)
+externfn!(
+    fn rtlsdr_get_device_count() -> u32)
+externfn!(
+	fn rtlsdr_get_device_name(devIndex: u32) -> *i8)
+externfn!(
+	fn rtlsdr_reset_buffer(dev: *c_void) -> c_int)
+externfn!(
+	fn rtlsdr_set_center_freq(dev: *c_void, freq: u32) -> c_int)
+externfn!(
+	fn rtlsdr_set_tuner_gain(dev: *c_void, gain: u32) -> c_int)
+externfn!(
+	fn rtlsdr_read_sync(dev: *c_void, buf: *mut u8, len: u32, n_read: *c_int) -> c_int)
+externfn!(
+	fn rtlsdr_read_async(dev: *c_void, cb: u64, chan: *c_void, buf_num: u32, buf_len: u32) -> c_int)
+externfn!(
+	fn rtlsdr_cancel_async(dev: *c_void) -> c_int)
+externfn!(
+	fn rtlsdr_set_sample_rate(dev: *c_void, sps: u32) -> c_int)
+externfn!(
+	fn rtlsdr_close(dev: *c_void) -> c_int)
 
 pub fn close(dev: *c_void){
 	unsafe {
