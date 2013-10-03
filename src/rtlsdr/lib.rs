@@ -1,6 +1,5 @@
 extern mod extra;
 
-use extra::complex;
 
 use std::str;
 use std::libc::{c_int, c_uint, c_void};
@@ -10,6 +9,8 @@ use std::task;
 use std::comm;
 
 use extra::complex;
+
+#[link_args = "-lrtlsdr"] extern {}
 
 externfn!(
 	fn rtlsdr_open(dev: **c_void, devIndex: u32) -> u32)

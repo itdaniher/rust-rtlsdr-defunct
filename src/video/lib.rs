@@ -1,9 +1,9 @@
 extern mod sdl2;
 extern mod extra;
+extern mod dsputils;
 use extra::time;
 use std::comm;
 use std::task;
-mod dsputils;
 
 pub fn drawVectorAsBarPlot (renderer: &sdl2::render::Renderer, mut data: ~[f32]){
 	// downsample to 800px if needbe

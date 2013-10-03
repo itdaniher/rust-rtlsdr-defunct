@@ -55,7 +55,7 @@ pub fn lpf(m: uint, fc: f32) -> ~[f32] {
 
 pub fn hpf(m: uint, fc: f32) -> ~[f32] {
 	let l: ~[f32] = lpf(m, fc);
-	let h: ~[f32] = l.iter().map(|&x| -x ).collect::<~[f32]>();
+	let mut h: ~[f32] = l.iter().map(|&x| -x ).collect::<~[f32]>();
 	h[m/2-1] += 1.0;
 	return h;
 }

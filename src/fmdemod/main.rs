@@ -1,14 +1,13 @@
 extern mod extra;
+extern mod kissfft;
+extern mod video;
+extern mod rtlsdr;
+extern mod pa;
+extern mod dsputils;
 
 use std::num;
 use extra::complex;
 use extra::time;
-
-mod kissfft;
-mod video;
-mod rtlsdr;
-mod pa;
-mod dsputils;
 
 fn main() {
 	let devHandle = rtlsdr::openDevice(0);
