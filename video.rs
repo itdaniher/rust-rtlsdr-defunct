@@ -7,7 +7,8 @@ mod dsputils;
 
 pub fn drawVectorAsBarPlot (renderer: &sdl2::render::Renderer, mut data: ~[f32]){
 	// downsample to 800px if needbe
-	let (sw, sh) = renderer.get_size();
+	let (sw, sh) = renderer.get_output_size().unwrap();
+	println(fmt!("%?, %?", sw, sh));
 	let len: uint = data.len() as uint;
 	let px: uint = sw as uint;
 	data = data.iter().enumerate().filter(|&(x, &y)| (x % (len/px + 1)) == 0).map(|(x, &y)| y).collect();
@@ -35,7 +36,7 @@ pub fn drawVectorAsBarPlot (renderer: &sdl2::render::Renderer, mut data: ~[f32])
 			width as i32,
 			hf as i32);
 		renderer.set_draw_color(sdl2::pixels::RGB(0, 127, 0));
-		renderer.fill_rect(r)
+		renderer.fill_rect(&r)
 	}).len();
 }
 
@@ -64,9 +65,7 @@ pub fn doWorkWithPEs (pDataC: comm::Port<~[f32]>) {
 
 pub fn spawnVectorVisualSink() -> (comm::Chan<~[f32]>){
 	let (pData, cData): (comm::Port<~[f32]>, comm::Chan<~[f32]>) = comm::stream();
-	let mut t = task::task();
-	t.sched_mode(task::SingleThreaded);
-	t.spawn_with(pData, doWorkWithPEs);
+	let t = task::task().spawn_with(pData, doWorkWithPEs);
 	return cData;
 }
 

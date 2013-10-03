@@ -1,5 +1,7 @@
 extern mod extra;
 
+use extra::complex;
+
 use std::str;
 use std::libc::{c_int, c_uint, c_void};
 use std::vec;
