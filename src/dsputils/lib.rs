@@ -8,8 +8,8 @@ use extra::complex;
 use std::num;
 
 // helper functions useful for FFT work
-pub fn asRe ( d: ~[f32] ) -> ~[extra::complex::Complex32] { return d.iter().map(|&x| {extra::complex::Cmplx {re: x, im: 0.0}}).collect::<~[extra::complex::Complex32]>();}
-pub fn asF32 ( d: ~[extra::complex::Complex32] ) -> ~[f32] { return d.iter().map(|&x| {if (num::abs(x.im) < 0.001) { x.re } else { let (m,p) = x.to_polar(); m*num::signum(p) }}).collect::<~[f32]>(); }
+pub fn asRe ( d: ~[f32] ) -> ~[complex::Complex32] { return d.iter().map(|&x| {complex::Cmplx {re: x, im: 0.0}}).collect::<~[complex::Complex32]>();}
+pub fn asF32 ( d: ~[complex::Complex32] ) -> ~[f32] { return d.iter().map(|&x| {if (num::abs(x.im) < 0.001) { x.re } else { let (m,p) = x.to_polar(); m*num::signum(p) }}).collect::<~[f32]>(); }
 pub fn asF64 ( d: ~[f32] ) -> ~[f64] { return d.iter().map(|&x| x as f64).collect(); }
 
 // filter code accepts:
@@ -45,6 +45,7 @@ pub fn sinc(m: uint, fc: f32) -> ~[f32] {
 	return results;
 }
 
+// low-pass filter
 pub fn lpf(m: uint, fc: f32) -> ~[f32] {
 //	assert_eq!(m % 2, 1);
 	let w = window(m);
@@ -53,6 +54,7 @@ pub fn lpf(m: uint, fc: f32) -> ~[f32] {
 	return r;
 }
 
+// high-pass filter
 pub fn hpf(m: uint, fc: f32) -> ~[f32] {
 	let l: ~[f32] = lpf(m, fc);
 	let mut h: ~[f32] = l.iter().map(|&x| -x ).collect::<~[f32]>();
@@ -60,6 +62,7 @@ pub fn hpf(m: uint, fc: f32) -> ~[f32] {
 	return h;
 }
 
+// band-stop filter
 pub fn bsf(m: uint, fc1: f32, fc2: f32) -> ~[f32] {
 	let lp: ~[f32] = lpf(m, fc1);
 	let hp: ~[f32] = hpf(m, fc2);
@@ -68,6 +71,7 @@ pub fn bsf(m: uint, fc1: f32, fc2: f32) -> ~[f32] {
 	return h;
 }
 
+// bandpass filter
 pub fn bpf(m:uint, fc1: f32, fc2: f32) -> ~[f32] {
 	let b: ~[f32] = bsf(m, fc1, fc2);
 	let h: ~[f32] = b.iter().map(|&x| -x ).collect::<~[f32]>();
