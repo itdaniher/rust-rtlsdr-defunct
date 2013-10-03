@@ -52,6 +52,10 @@ pub fn doWorkWithPEs (pDataC: comm::Port<~[f32]>) {
 		Err(err) => fail!("")
 	};
 	'main : loop {
+		match sdl2::event::poll_event() {
+			sdl2::event::QuitEvent(_) => break 'main,
+			_ => {}
+		}
 		if pDataC.peek() {
 			let d = pDataC.recv();
 			drawVectorAsBarPlot(renderer, d);
@@ -61,16 +65,11 @@ pub fn doWorkWithPEs (pDataC: comm::Port<~[f32]>) {
 			renderer.present()
 		}
 	}
+	sdl2::quit();
 }
 
 pub fn spawnVectorVisualSink() -> (comm::Chan<~[f32]>){
 	let (pData, cData): (comm::Port<~[f32]>, comm::Chan<~[f32]>) = comm::stream();
 	let t = task::task().spawn_with(pData, doWorkWithPEs);
 	return cData;
-}
-
-fn main () {
-	let c = spawnVectorVisualSink();
-	c.send(dsputils::bpf(511, 20.0/881e3, 20e3/881e3));
-	loop {}
 }
