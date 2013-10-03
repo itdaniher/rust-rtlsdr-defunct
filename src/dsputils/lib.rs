@@ -77,7 +77,3 @@ pub fn bpf(m:uint, fc1: f32, fc2: f32) -> ~[f32] {
 	let h: ~[f32] = b.iter().map(|&x| -x ).collect::<~[f32]>();
 	return h;
 }
-
-fn main() {
-	println(fmt!("%?", lpf(511, 20.0e3/88.1e3)));
-}
