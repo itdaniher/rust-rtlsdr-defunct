@@ -8,7 +8,6 @@ use std::task;
 pub fn drawVectorAsBarPlot (renderer: &sdl2::render::Renderer, mut data: ~[f32]){
 	// downsample to 800px if needbe
 	let (sw, sh) = renderer.get_output_size().unwrap();
-	println(fmt!("%?, %?", sw, sh));
 	let len: uint = data.len() as uint;
 	let px: uint = sw as uint;
 	data = data.iter().enumerate().filter(|&(x, &y)| (x % (len/px + 1)) == 0).map(|(x, &y)| y).collect();
@@ -60,7 +59,7 @@ pub fn doWorkWithPEs (pDataC: comm::Port<~[f32]>) {
 			let d = pDataC.recv();
 			drawVectorAsBarPlot(renderer, d);
 		}
-		if ((time::precise_time_ns() - lastDraw) > ((1f/30f)*1e9) as u64) {
+		if ((time::precise_time_ns() - lastDraw) > ((1f32/30f32)*1e9) as u64) {
 			lastDraw = time::precise_time_ns();
 			renderer.present()
 		}
