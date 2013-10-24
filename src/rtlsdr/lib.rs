@@ -114,7 +114,7 @@ pub fn readAsync(dev: *c_void) -> ~Port<~[u8]> {
 pub fn stopAsync(dev: *c_void) -> () {
 	unsafe {
 		let success = rtlsdr_cancel_async(dev);
-		println(fmt!("%?", success));
+		println(format!("{:?}", success));
 		assert_eq!(success, 0);
 	}
 }

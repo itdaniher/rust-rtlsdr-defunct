@@ -3,17 +3,3 @@ This project provides basic wrappers for the C API to the librtlsdr library.
 rtlsdr.rc implements a first pass at the functionality provided by rtl-fm, supporting demodulation of WBFM stations broadcasting at 87.9MHz. It uses basic dphase/dt demodulation, an audio bandpass implemented via a fast overlap-scrap FIR filter, with [kissfft](https://github.com/itdaniher/rust-kissfft), [sdl](https://github.com/brson/rust-sdl), and [pulseaudio](https://github.com/itdaniher/rust-pulse-simple) helping move bits around.
 
 This was intended as a proof of concept - I'll readily accept criticisms, suggestions, bug reports, and patches.
-
-### Installation
-
-make sure you have librtlsdr, pulseaudio, and associated devel headers instealled.
-
-build rust-sdl and drop it in the local directory.
-
-build kissfft and drop libkissfft.so and kissfft.rs in the local path.
-
-drop pa.rs in the local path.
-
-'make'
-
-run the resulting 'rtlsdr' executable'
