@@ -94,18 +94,17 @@ pub fn setGainAuto(device: *c_void) {
 }
 
 extern fn rtlsdr_callback(buf: *u8, len: u32, chan: &comm::Chan<~[u8]>) {
-	assert_eq!(len, 512);
 	unsafe {
 		let data = vec::raw::from_buf_raw(buf, len as uint);
 		chan.send(data);
 	}
 }
 
-pub fn readAsync(dev: *c_void) -> ~Port<~[u8]> {
+pub fn readAsync(dev: *c_void, blockSize: u32) -> ~Port<~[u8]> {
 	let (port, chan): (comm::Port<~[u8]>, comm::Chan<~[u8]>) = comm::stream();
 	do task::spawn_sched(task::SingleThreaded) {
 		unsafe{
-			rtlsdr_read_async(dev, cast::transmute(rtlsdr_callback), cast::transmute(&chan), 32, 512);
+			rtlsdr_read_async(dev, cast::transmute(rtlsdr_callback), cast::transmute(&chan), 32, blockSize*2);
 		}
 	}
 	return ~port;
