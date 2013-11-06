@@ -1,57 +1,67 @@
 extern mod extra;
-extern mod kissfft;
-extern mod videoSinkSDL1;
+extern mod OpenCL;
 extern mod rtlsdr;
-extern mod pa;
+extern mod videoSinkSDL2;
 extern mod dsputils;
 
-use std::num;
+use OpenCL::mem::CLBuffer;
 use extra::complex;
-use extra::time;
+use std::rt::io;
+use std::rt::io::file;
+use std::rt::io::Reader;
+use std::str;
 
 fn main() {
-	let centerFreq: f32 = 433.8e6;
-	let sRate: f32 = 1.024e6;
-	let blockSize: uint = 4096;
+
+	// rtlsdr config
+	let sRate: f32 = 2.048e6;
+	let centerFreq: f32 = 434e6;
+	let blockSize = 1024*640;
 	let devHandle = rtlsdr::openDevice(0);
 	rtlsdr::setSampleRate(devHandle, sRate as u32);
 	rtlsdr::clearBuffer(devHandle);
-	//rtlsdr::setGainAuto(devHandle);
-	println(format!("{}", centerFreq));
+	rtlsdr::setGainAuto(devHandle);
 	rtlsdr::setFrequency(devHandle, centerFreq as u32);
-	let (p, videoChan) = videoSinkSDL1::spawnVectorVisualSink();
-	let pdata = rtlsdr::readAsync(devHandle);
-	let bpf = kissfft::kissFFT(dsputils::asRe(dsputils::bpf(blockSize, (433.85e6-centerFreq)/sRate, (433.95e6-centerFreq)/sRate)));
-	let (pFFT, cFFT) = kissfft::buildFFTBlock(blockSize as u64, true);
+
+	// load fft kernel, instantiate context
+	let ker = file::open(&std::path::Path::new("./fft.cl"), io::Open, io::Read).read_to_end();
+    let ker = str::from_utf8(ker);
+
+	let (device, ctx, queue) = OpenCL::util::create_compute_context().unwrap();
+
+	let inBuff: CLBuffer<complex::Complex32> = ctx.create_buffer(blockSize, OpenCL::CL::CL_MEM_WRITE_ONLY);
+	let outBuff: CLBuffer<complex::Complex32> = ctx.create_buffer(blockSize, OpenCL::CL::CL_MEM_READ_ONLY);
+
+	let program = ctx.create_program_from_source(ker);
+
+	program.build(&device);
+
+	let kernel = program.create_kernel("fft1D_1024");
+
+	kernel.set_arg(0, &inBuff);
+	kernel.set_arg(1, &outBuff);
+
+	// build bitmap sink
+	let videoChan = videoSinkSDL2::spawnVectorVisualSink();
+	// start reading
+	let pdata = rtlsdr::readAsync(devHandle, blockSize as u32);
+
 	'main: loop {
-		let mut i = 0;
-		let mut samples: ~[complex::Complex32] = ~[];
-		'accSamples: loop {
-			samples = samples + rtlsdr::dataToSamples(pdata.recv());
-			if (samples.len() == (blockSize)) {break 'accSamples};
-		}
-		let datafft = kissfft::kissFFT(samples);
-		let ffts = datafft.iter().zip(bpf.iter()).map(|(&x, &y)| x*y).collect();
-		let filtered = dsputils::asF32(ffts);
-		let f: ~[f32] = filtered.iter().map(|&x| num::abs(x)).enumerate().filter(|&(x, y)| (x > 0)).map(|(x, y)| y).collect();
-		let integral: ~[f32] = f.iter().scan(0.0f32, |mut x, &y| {*x += y; Some(*x)}).collect();
-		// if the video sink disappears, drop from the loop
-		if !videoChan.try_send(dsputils::asF32(datafft)){
+		// read samples
+		let samples: ~[complex::Complex32] = rtlsdr::dataToSamples(pdata.recv());
+		// queue gpu write
+		queue.write(&inBuff, &samples.slice(0, samples.len()), ());
+		// fft
+		let event = queue.enqueue_async_kernel(&kernel, (1024u/8u, samples.len()/1024), Some((1024/8, 1)), ());
+		let datafft: ~[complex::Complex32] = queue.get(&outBuff, &event);
+		// take magnitude
+		let dftF: ~[f32] = datafft.iter().map(|x| {let (m, p) = x.to_polar(); m}).collect();
+		// try to send, if you can't send, quit
+		if !videoChan.try_send(dftF){
 			break 'main
 		}
-		'flush : loop {
-			if !pdata.peek() {
-				if i > 0 {
- 					println(format!("dropped {:?}", i));
-				}
- 				break 'flush;
- 			}
- 			else {
-				pdata.recv();
-				i = i + 1;
- 			}
-		}
 	}
+	// stop rtlsdr
 	rtlsdr::stopAsync(devHandle);
 	rtlsdr::close(devHandle);
 }
