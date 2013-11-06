@@ -19,7 +19,7 @@ pub fn asF64 ( d: ~[f32] ) -> ~[f64] { return d.iter().map(|&x| x as f64).collec
 
 pub fn window(m: uint) -> ~[f32] {
 	let N = m as f32;
-	let pi = f32::consts::pi;
+	let pi = f32::consts::PI;
 	// blackman-nuttall coefficients
 	let a: ~[f32] = ~[0.3635819, 0.4891775, 0.1365995, 0.0106411];
 	// blackman-harris window coefficients
@@ -36,7 +36,7 @@ pub fn window(m: uint) -> ~[f32] {
 pub fn sinc(m: uint, fc: f32) -> ~[f32] {
 	// fc should always specify corner below nyquist
 	assert!(fc < 0.5);
-	let pi = f32::consts::pi;
+	let pi = f32::consts::PI;
 	let results: ~[f32] = range(0, m).map(|x| -> f32 {
 		let n = x as f32 - m as f32/2f32;
 		let mut r = 2f32*fc;
