@@ -1,67 +1,43 @@
 extern mod sdl2;
 extern mod extra;
 extern mod dsputils;
+
 use extra::time;
 use std::comm;
 use std::task;
-
-pub fn drawVectorAsBarPlot (renderer: &sdl2::render::Renderer, mut data: ~[f32]){
-	// downsample to 800px if needbe
-	let (sw, sh) = renderer.get_output_size().unwrap();
-	let len: uint = data.len() as uint;
-	let px: uint = sw as uint;
-	data = data.iter().enumerate().filter(|&(x, &y)| (x % (len/px + 1)) == 0).map(|(x, &y)| y).collect();
-	// black screen background
-	renderer.set_draw_color(sdl2::pixels::RGB(0, 0, 0));
-	renderer.clear();
-	// calculate bar width
-	let width: f32 = sw as f32 / (data.len() as f32);
-	let height: f32 = sh as f32;
-	// find max value
-	let &dmax: &f32 = data.iter().max().unwrap();
-	let &dmin: &f32 = data.iter().min().unwrap();
-	// calculate height scale value
-	let scale: f32 = height / (2f32*(dmax-dmin));
-	assert!(width > 1.0);
-	data.reverse();
-	data.iter().enumerate().map(|(i, &x)| {
-		let mut yf = height*0.5f32;
-		let mut hf = scale*x;
-		if (x > 0f32) {yf -= x*scale;}
-		if (x < 0f32) {hf = -1f32*hf;}
-		let r = sdl2::rect::Rect (
-			((sw as f32)- width*(i as f32 + 1.0)) as i32,
-			yf as i32,
-			width as i32,
-			hf as i32);
-		renderer.set_draw_color(sdl2::pixels::RGB(0, 127, 0));
-		renderer.fill_rect(&r)
-	}).len();
-}
+use std::num;
 
 pub fn doWorkWithPEs (pDataC: comm::Port<~[f32]>) {
 	let mut lastDraw: u64 = 0;
 	sdl2::init([sdl2::InitVideo]);
-	let window =  match sdl2::video::Window::new("rust-sdl2 demo: Video", sdl2::video::PosCentered, sdl2::video::PosCentered, 800, 600, [sdl2::video::OpenGL]) {
-		Ok(window) => window,
-		Err(err) => fail!("")
-	};
-	let renderer =  match sdl2::render::Renderer::from_window(window, sdl2::render::DriverAuto, [sdl2::render::Accelerated]){
-		Ok(renderer) => renderer,
-		Err(err) => fail!("")
-	};
+	let window =  sdl2::video::Window::new("rust-sdl2 waterfall", sdl2::video::PosCentered, sdl2::video::PosCentered, 1024, 640, []).unwrap();
+	let surf = window.get_surface().unwrap();
+	do surf.with_lock |pixels| {
+		println!("{}", pixels.len());
+	}
 	'main : loop {
 		match sdl2::event::poll_event() {
 			sdl2::event::QuitEvent(_) => break 'main,
 			_ => {}
 		}
 		if pDataC.peek() {
+			let start = time::precise_time_ns();
 			let d = pDataC.recv();
-			drawVectorAsBarPlot(renderer, d);
-		}
-		if ((time::precise_time_ns() - lastDraw) > ((1f32/30f32)*1e9) as u64) {
-			lastDraw = time::precise_time_ns();
-			renderer.present()
+			let &dmax: &f32 = d.iter().max().unwrap();
+			let dmaxNormed = 255f32/dmax;
+			let d: ~[u8] = d.iter().map(|&x: &f32| (x*dmaxNormed) as u8).collect();
+			do surf.with_lock |pixels| {
+				for i in range(0u, d.len()) {
+					pixels[i*4+1] = d[i];
+				}
+			}
+			let end = time::precise_time_ns();
+			println!("{}", (end-start) as f32/1e9);
+			if ((time::precise_time_ns() - lastDraw) > ((1f32/30f32)*1e9) as u64) {
+				println!("{}", (time::precise_time_ns() - lastDraw)/1000)
+				lastDraw = time::precise_time_ns();
+				window.update_surface();
+			}
 		}
 	}
 	sdl2::quit();
