@@ -7,7 +7,7 @@ extern mod dsputils;
 use OpenCL::mem::CLBuffer;
 use extra::complex;
 use std::rt::io;
-use std::rt::io::file;
+use std::rt::io::File;
 use std::rt::io::Reader;
 use std::str;
 
@@ -24,7 +24,8 @@ fn main() {
 	rtlsdr::setFrequency(devHandle, centerFreq as u32);
 
 	// load fft kernel, instantiate context
-	let ker = file::open(&std::path::Path::new("./fft.cl"), io::Open, io::Read).read_to_end();
+	let ker = File::open(&std::path::Path::new("./fft.cl")).read_to_end();
+
     let ker = str::from_utf8(ker);
 
 	let (device, ctx, queue) = OpenCL::util::create_compute_context().unwrap();
