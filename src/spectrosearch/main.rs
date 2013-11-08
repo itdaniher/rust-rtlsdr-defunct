@@ -3,6 +3,7 @@ extern mod OpenCL;
 extern mod rtlsdr;
 extern mod videoSinkSDL2;
 extern mod dsputils;
+extern mod triangle;
 
 use OpenCL::mem::CLBuffer;
 use extra::complex;
@@ -16,7 +17,8 @@ fn main() {
 	// rtlsdr config
 	let sRate: f32 = 2.048e6;
 	let centerFreq: f32 = 434e6;
-	let blockSize = 1024*640;
+	let blockSize = 1024*64;
+
 	let devHandle = rtlsdr::openDevice(0);
 	rtlsdr::setSampleRate(devHandle, sRate as u32);
 	rtlsdr::clearBuffer(devHandle);
@@ -43,7 +45,7 @@ fn main() {
 	kernel.set_arg(1, &outBuff);
 
 	// build bitmap sink
-	let videoChan = videoSinkSDL2::spawnVectorVisualSink();
+	let videoChan = triangle::spawnVectorVisualSink(1024, 64);
 	// start reading
 	let pdata = rtlsdr::readAsync(devHandle, blockSize as u32);
 
@@ -57,12 +59,16 @@ fn main() {
 		let datafft: ~[complex::Complex32] = queue.get(&outBuff, &event);
 		// take magnitude
 		let dftF: ~[f32] = datafft.iter().map(|x| {let (m, p) = x.to_polar(); m}).collect();
+		let &dmax: &f32 = dftF.iter().max().unwrap();
+		let d: ~[f32] = dftF.iter().map(|&x: &f32| x/dmax).collect();
 		// try to send, if you can't send, quit
-		if !videoChan.try_send(dftF){
+		if !videoChan.try_send(d){
 			break 'main
 		}
 	}
+
 	// stop rtlsdr
 	rtlsdr::stopAsync(devHandle);
 	rtlsdr::close(devHandle);
+
 }
