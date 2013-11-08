@@ -1,5 +1,5 @@
-This project provides basic wrappers for the C API to the librtlsdr library.
+* fmdemod implements a first pass at the functionality provided by rtl-fm, supporting demodulation of WBFM stations broadcasting at 87.9MHz. It uses basic dphase/dt demodulation, an audio bandpass implemented via a fast overlap-scrap FIR filter, with [kissfft](https://github.com/itdaniher/rust-kissfft), [sdl](https://github.com/brson/rust-sdl), and [pulseaudio](https://github.com/itdaniher/rust-pulse-simple) helping move bits around.
 
-rtlsdr.rc implements a first pass at the functionality provided by rtl-fm, supporting demodulation of WBFM stations broadcasting at 87.9MHz. It uses basic dphase/dt demodulation, an audio bandpass implemented via a fast overlap-scrap FIR filter, with [kissfft](https://github.com/itdaniher/rust-kissfft), [sdl](https://github.com/brson/rust-sdl), and [pulseaudio](https://github.com/itdaniher/rust-pulse-simple) helping move bits around.
+* spectrosearch implements a GPU accelerated spectrum waterfall using opencl, opengl, and glfw.
 
 This was intended as a proof of concept - I'll readily accept criticisms, suggestions, bug reports, and patches.
