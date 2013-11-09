@@ -4,9 +4,9 @@ extern mod extra;
 use std::str;
 use std::libc::{c_int, c_uint, c_void};
 use std::vec;
-use std::cast;
 use std::task;
 use std::comm;
+use std::ptr;
 
 use extra::complex;
 
@@ -27,7 +27,7 @@ externfn!(
 externfn!(
 	fn rtlsdr_read_sync(dev: *c_void, buf: *mut u8, len: u32, n_read: *c_int) -> c_int)
 externfn!(
-	fn rtlsdr_read_async(dev: *c_void, cb: u64, chan: *c_void, buf_num: u32, buf_len: u32) -> c_int)
+	fn rtlsdr_read_async(dev: *c_void, cb: extern "C" fn(*u8, u32, &std::comm::Chan<~[u8]>), chan: &comm::Chan<~[u8]>, buf_num: u32, buf_len: u32) -> c_int)
 externfn!(
 	fn rtlsdr_cancel_async(dev: *c_void) -> c_int)
 externfn!(
@@ -58,7 +58,7 @@ pub fn getDeviceCount() -> u32 {
 
 pub fn openDevice(devIndex: u32) -> *c_void{
 	unsafe {
-		let devStructPtr: *c_void = cast::transmute(0);
+		let devStructPtr: *c_void = ptr::null();
 		let success = rtlsdr_open(&devStructPtr, devIndex);
 		assert_eq!(success, 0);
 		return devStructPtr;
@@ -104,7 +104,7 @@ pub fn readAsync(dev: *c_void, blockSize: u32) -> ~Port<~[u8]> {
 	let (port, chan): (comm::Port<~[u8]>, comm::Chan<~[u8]>) = comm::stream();
 	do task::spawn_sched(task::SingleThreaded) {
 		unsafe{
-			rtlsdr_read_async(dev, cast::transmute(rtlsdr_callback), cast::transmute(&chan), 32, blockSize*2);
+			rtlsdr_read_async(dev, rtlsdr_callback, &chan, 32, blockSize*2);
 		}
 	}
 	return ~port;
