@@ -22,15 +22,10 @@ fn main() {
 	let filter: ~[f32] = dsputils::bpf(511, 20.0/881e3, 20e3/881e3);
 	let paddedFilter: ~[f32] = ~[0.0f32, ..3840] + filter + ~[0.0f32, ..3841];
 	let filterFFTd: ~[complex::Complex32] = kissfft::kissFFT(dsputils::asRe(paddedFilter));
-	let pdata = rtlsdr::readAsync(devHandle);
+	let pdata = rtlsdr::readAsync(devHandle, 512*15);
 	loop {
 		let start = time::precise_time_ns();
-		// 8192-512 \pm 1 complex-typed samples
-		let mut samples: ~[complex::Complex32] = ~[];
-		loop {
-			samples = samples + rtlsdr::dataToSamples(pdata.recv());
-			if (samples.len() == (512*15)) {break};
-		}
+		let samples = rtlsdr::dataToSamples(pdata.recv());
 		// phase of complex numbers
 		let phase: ~[f32] = samples.iter().map(|&x| num::atan2(x.im, x.re)).collect();
 		let dpdt: ~[f32] = phase.window_iter(2).map(|x| {
@@ -39,7 +34,6 @@ fn main() {
 			if (dx > pi) {dx = dx - 2f32*pi};
 			dx}
 			).collect::<~[f32]>();
-		//videoChan.send(dpdt.clone());
 		// 15 * 512 = 7679
 		let paddedData = dsputils::asRe(~[0.0f32, ..256]) + dsputils::asRe(dpdt) + dsputils::asRe(~[0.0f32, ..257]);
 		// multiply DFT'd filter coefficients by DFT'd data - implement overlap-scrap fast convolution
@@ -58,6 +52,8 @@ fn main() {
 			((x as f32*downsampleFactor) - (x as f32*downsampleFactor).floor()) < downsampleFactor
 			).map(|(x, &y)| y).collect();
 		videoChan.send(downsampled.clone());
-		co.send(downsampled);
+		co.send(downsampled.clone());
+		let end = time::precise_time_ns();
+		println!("{} {}", (end-start)/1000, downsampled.len());
 	}
 }

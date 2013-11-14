@@ -176,7 +176,8 @@ pub fn doWorkWithPEs (pDataC: comm::Port<~[f32]>, x: uint, y: uint) {
 			gl::ActiveTexture(gl::TEXTURE0);
 			gl::BindTexture(gl::TEXTURE_2D, 0);
 			"data".with_c_str(|ptr| gl::Uniform1i(gl::GetUniformLocation(program, ptr), 0));
-			gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RED as i32, x as i32, y as i32, 0, gl::RED, gl::FLOAT, cast::transmute(data.unsafe_mut_ref(0)));
+			gl::TexImage2D(gl::TEXTURE_2D, 0, gl::RED as i32, x as i32, y as i32,
+				0, gl::RED, gl::FLOAT, cast::transmute(data.unsafe_mut_ref(0)));
 			gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32);
 			gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32);
 			gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32);
@@ -195,7 +196,8 @@ pub fn doWorkWithPEs (pDataC: comm::Port<~[f32]>, x: uint, y: uint) {
 				if pDataC.peek() {
 					data = pDataC.recv();
 					gl::BindTexture(gl::TEXTURE_2D, 0);
-					gl::TexSubImage2D(gl::TEXTURE_2D, 0, 0, 0, 1024, (data.len()/1024) as i32, gl::RED, gl::FLOAT, cast::transmute(data.unsafe_mut_ref(0)));
+					gl::TexSubImage2D(gl::TEXTURE_2D, 0, 0, 0, x as i32, y as i32,
+						gl::RED, gl::FLOAT, cast::transmute(data.unsafe_mut_ref(0)));
 				}
 
 				// Swap buffers
