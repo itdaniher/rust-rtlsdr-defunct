@@ -13,29 +13,38 @@ pub fn asRe ( d: ~[f32] ) -> ~[complex::Complex32] { return d.iter().map(|&x| {c
 pub fn asF32 ( d: ~[complex::Complex32] ) -> ~[f32] { return d.iter().map(|&x| {if (num::abs(x.im) < 0.001) { x.re } else { let (m,p) = x.to_polar(); m*num::signum(p) }}).collect::<~[f32]>(); }
 pub fn asF64 ( d: ~[f32] ) -> ~[f64] { return d.iter().map(|&x| x as f64).collect(); }
 
-
 pub fn sum<T: Num+Ord+Primitive>(In: ~[T]) -> T {
 	let mut out: T = num::zero();
-	for i in range(0, In.len()-1) {
-		out = out + In[i];
+	if (In.len() != 0) {
+		for i in range(0, In.len()) {
+			out = out + In[i];
+		}
 	}
 	return out
 }
 
+#[inline(always)]
 pub fn mean<T: Num+Ord+Primitive+ToPrimitive>(In: ~[T]) -> f32 {
 	let l = In.len() as f32;
 	let s = sum(In).to_f32().unwrap()/l;
 	return s/l
 }
 
-pub fn max<T: Num+Ord+Primitive>(In: ~[T]) -> T {
+#[inline(always)]
+pub fn max<T: Num+Ord+Primitive>(In: &[T]) -> T {
 	let dmax = In.iter().max().unwrap();
 	return dmax.clone()
 }
 
+#[inline(always)]
+pub fn min<T: Num+Ord+Primitive>(In: &[T]) -> T {
+	let dmax = In.iter().min().unwrap();
+	return dmax.clone()
+}
 
+#[inline(always)]
 pub fn convolve<T: Num+Ord+Primitive+ToPrimitive>(A: ~[T], B: ~[T]) -> ~[T] {
-	A.window_iter(B.len()).map(|x| {
+	A.windows(B.len()).map(|x| {
 		sum(range(0, B.len()).map(|i| {x[i]*B[i]}).to_owned_vec())
 	}).to_owned_vec()
 }
