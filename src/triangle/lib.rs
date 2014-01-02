@@ -110,10 +110,6 @@ fn link_program(vs: GLuint, fs: GLuint) -> GLuint {
 
 pub fn doWorkWithPEs (pDataC: comm::Port<~[f32]>, x: uint, y: uint) {
 
-	do glfw::set_error_callback |_, description| {
-		println!("GLFW Error: {}", description);
-	}
-
 	do glfw::start {
 		glfw::window_hint::context_version(3, 2);
 		glfw::window_hint::opengl_profile(glfw::OpenGlCoreProfile);
