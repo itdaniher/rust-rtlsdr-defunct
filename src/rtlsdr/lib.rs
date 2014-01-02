@@ -10,7 +10,7 @@ use std::ptr;
 
 use extra::complex;
 
-#[link_args = "-lrtlsdr"] extern {}
+#[link(name= "rtlsdr")]
 
 extern "C" {
 	fn rtlsdr_open(dev: **c_void, devIndex: u32) -> u32;
@@ -19,6 +19,7 @@ extern "C" {
 	fn rtlsdr_reset_buffer(dev: *c_void) -> c_int;
 	fn rtlsdr_set_center_freq(dev: *c_void, freq: u32) -> c_int;
 	fn rtlsdr_set_tuner_gain(dev: *c_void, gain: u32) -> c_int;
+	fn rtlsdr_set_tuner_gain_mode(dev: *c_void, mode: u32) -> c_int;
 	fn rtlsdr_read_sync(dev: *c_void, buf: *mut u8, len: u32, n_read: *c_int) -> c_int;
 	fn rtlsdr_read_async(dev: *c_void, cb: extern "C" fn(*u8, u32, &std::comm::Chan<~[u8]>), chan: &comm::Chan<~[u8]>, buf_num: u32, buf_len: u32) -> c_int;
 	fn rtlsdr_cancel_async(dev: *c_void) -> c_int;
@@ -77,9 +78,18 @@ pub fn setFrequency(device: *c_void, freq: u32) {
 	}
 }
 
+pub fn setGain(device: *c_void, v: u32) {
+	unsafe {
+		let success = rtlsdr_set_tuner_gain_mode(device, 1);
+		assert_eq!(success, 0);
+		let success = rtlsdr_set_tuner_gain(device, v);
+		assert_eq!(success, 0);
+	}
+}
+
 pub fn setGainAuto(device: *c_void) {
 	unsafe {
-		let success = rtlsdr_set_tuner_gain(device, 0);
+		let success = rtlsdr_set_tuner_gain_mode(device, 0);
 		assert_eq!(success, 0);
 	}
 }
@@ -92,7 +102,7 @@ extern fn rtlsdr_callback(buf: *u8, len: u32, chan: &comm::Chan<~[u8]>) {
 }
 
 pub fn readAsync(dev: *c_void, blockSize: u32) -> ~Port<~[u8]> {
-	let (port, chan): (comm::Port<~[u8]>, comm::Chan<~[u8]>) = comm::stream();
+	let (port, chan): (comm::Port<~[u8]>, comm::Chan<~[u8]>) = comm::Chan::new();
 	do task::spawn_sched(task::SingleThreaded) {
 		unsafe{
 			rtlsdr_read_async(dev, rtlsdr_callback, &chan, 32, blockSize*2);
@@ -113,7 +123,7 @@ pub fn readSync(dev: *c_void, ct: c_uint) -> ~[u8] {
 	unsafe {
 		let n_read: c_int = 0;
 		let mut buffer: ~[u8] = ~[0, ..512];
-		let success = rtlsdr_read_sync(dev, vec::raw::to_mut_ptr(buffer), ct, &n_read);
+		let success = rtlsdr_read_sync(dev, buffer.as_mut_ptr(), ct, &n_read);
 		assert_eq!(success, 0);
 		assert_eq!(ct as i32, n_read);
 		return buffer;
@@ -122,6 +132,6 @@ pub fn readSync(dev: *c_void, ct: c_uint) -> ~[u8] {
 
 fn i2f(i: u8) -> f32 {(i as f32)/127.0 - 1.0}
 pub fn dataToSamples(data: ~[u8]) -> ~[complex::Complex32] {
-	let samples = data.chunk_iter(2).map(|i| complex::Cmplx{re:i2f(i[0]), im:i2f(i[1])}).collect();
+	let samples = data.chunks(2).map(|i| complex::Cmplx{re:i2f(i[0]), im:i2f(i[1])}).collect();
 	return samples;
 }
