@@ -1,6 +1,6 @@
 extern mod extra;
 extern mod kissfft;
-extern mod videoSinkSDL1;
+extern mod videoSinkSDL2;
 extern mod rtlsdr;
 extern mod pa;
 extern mod dsputils;
@@ -15,7 +15,7 @@ fn main() {
 	rtlsdr::clearBuffer(devHandle);
 	rtlsdr::setGainAuto(devHandle);
 	rtlsdr::setFrequency(devHandle, 87900000);
-	let (p, videoChan) = videoSinkSDL1::spawnVectorVisualSink();
+	let (p, videoChan) = videoSinkSDL2::spawnVectorVisualSink();
 	let pi: f32 = num::atan2(1f32,1f32) * 4f32;
 	let co = pa::buildPASinkBlock(44100);
 	// len 511 complex-coefficiented, real-valued block filter, padded to 8192
