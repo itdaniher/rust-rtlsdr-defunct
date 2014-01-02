@@ -6,11 +6,7 @@ extern mod videoSinkSDL1;
 use extra::complex;
 use extra::sort;
 use extra::bitv;
-use std::comm::{stream,Port,Chan};
-
-#[link_name = "bitfount"]
-
-#[link_args = "-lm"] extern {}
+use std::comm::{Port,Chan};
 
 fn validPulse (In: &rle::Run) -> Option<rle::Run> {
 	match In.ct {
@@ -60,26 +56,4 @@ fn packetize(In: ~[uint]) -> ~[~[uint]] {
 		else {working.push(x)}
 	};
 	return Out
-}
-
-
-pub fn matchamt(bitstream: ~[rle::Run]) -> bool{
-	let mut pulses = bitstream.iter().filter_map( |x| validPulseBert(x)).to_owned_vec();
-	println!("{:?}", pulses.len());
-	
-	let seq = rle::rld(pulses.clone());
-	let bits = seq.chunks(2).filter_map( |x| validBitBert(x)).to_owned_vec();
-	let mut out = false;
-	match bits.len() {
-		96 => {
-			match bits.slice_to(21) {
-				[1,1,1,1,1,0,0,1, 0,1,0,1,0,0,1,1, 0,0,0,0,0] => {
-				println!("{:?}", (rle::v2b(bits.slice(30,52)), rle::v2b(bits.slice(56,80))));
-				out = true;
-			},
-			_ => ()
-			}},
-		_ => ()
-	}
-	return out;
 }
