@@ -1,11 +1,11 @@
 extern mod extra;
+extern mod native;
 
-
+use native::task;
 use std::str;
 use std::libc::{c_int, c_uint, c_void};
 use std::vec;
-use std::task;
-use std::comm;
+use std::comm::{Chan,Port};
 use std::ptr;
 
 use extra::complex;
@@ -14,14 +14,14 @@ use extra::complex;
 
 extern "C" {
 	fn rtlsdr_open(dev: **c_void, devIndex: u32) -> u32;
-    fn rtlsdr_get_device_count() -> u32;
+        fn rtlsdr_get_device_count() -> u32;
 	fn rtlsdr_get_device_name(devIndex: u32) -> *i8;
 	fn rtlsdr_reset_buffer(dev: *c_void) -> c_int;
 	fn rtlsdr_set_center_freq(dev: *c_void, freq: u32) -> c_int;
 	fn rtlsdr_set_tuner_gain(dev: *c_void, gain: u32) -> c_int;
 	fn rtlsdr_set_tuner_gain_mode(dev: *c_void, mode: u32) -> c_int;
 	fn rtlsdr_read_sync(dev: *c_void, buf: *mut u8, len: u32, n_read: *c_int) -> c_int;
-	fn rtlsdr_read_async(dev: *c_void, cb: extern "C" fn(*u8, u32, &std::comm::Chan<~[u8]>), chan: &comm::Chan<~[u8]>, buf_num: u32, buf_len: u32) -> c_int;
+	fn rtlsdr_read_async(dev: *c_void, cb: extern "C" fn(*u8, u32, &Chan<~[u8]>), chan: &Chan<~[u8]>, buf_num: u32, buf_len: u32) -> c_int;
 	fn rtlsdr_cancel_async(dev: *c_void) -> c_int;
 	fn rtlsdr_set_sample_rate(dev: *c_void, sps: u32) -> c_int;
 	fn rtlsdr_close(dev: *c_void) -> c_int;
@@ -48,12 +48,21 @@ pub fn getDeviceCount() -> u32 {
 	}
 }
 
-pub fn openDevice(devIndex: u32) -> *c_void{
+pub fn openDevice() -> *c_void {
 	unsafe {
-		let devStructPtr: *c_void = ptr::null();
-		let success = rtlsdr_open(&devStructPtr, devIndex);
-		assert_eq!(success, 0);
-		return devStructPtr;
+		let mut i: u32 = 0;
+		let mut devStructPtr: *c_void = ptr::null();
+		'tryDevices: loop {
+			let success = rtlsdr_open(&devStructPtr, i);
+			if (success == 0) {
+				break 'tryDevices
+			}
+			if (i > getDeviceCount()) {
+				fail!("no available devices");
+			}
+			i += 1;
+		}
+	return devStructPtr;
 	}
 }
 
@@ -94,7 +103,7 @@ pub fn setGainAuto(device: *c_void) {
 	}
 }
 
-extern fn rtlsdr_callback(buf: *u8, len: u32, chan: &comm::Chan<~[u8]>) {
+extern fn rtlsdr_callback(buf: *u8, len: u32, chan: &Chan<~[u8]>) {
 	unsafe {
 		let data = vec::raw::from_buf_raw(buf, len as uint);
 		chan.send(data);
@@ -102,8 +111,8 @@ extern fn rtlsdr_callback(buf: *u8, len: u32, chan: &comm::Chan<~[u8]>) {
 }
 
 pub fn readAsync(dev: *c_void, blockSize: u32) -> ~Port<~[u8]> {
-	let (port, chan): (comm::Port<~[u8]>, comm::Chan<~[u8]>) = comm::Chan::new();
-	do task::spawn_sched(task::SingleThreaded) {
+	let (port, chan): (Port<~[u8]>, Chan<~[u8]>) = Chan::new();
+	do task::spawn {
 		unsafe{
 			rtlsdr_read_async(dev, rtlsdr_callback, &chan, 32, blockSize*2);
 		}
