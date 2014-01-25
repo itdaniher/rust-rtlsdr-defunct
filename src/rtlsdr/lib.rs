@@ -123,7 +123,7 @@ pub fn readAsync(dev: *c_void, blockSize: u32) -> ~Port<~[u8]> {
 pub fn stopAsync(dev: *c_void) -> () {
 	unsafe {
 		let success = rtlsdr_cancel_async(dev);
-		println(format!("{:?}", success));
+		println!("{:?}", success);
 		assert_eq!(success, 0);
 	}
 }
